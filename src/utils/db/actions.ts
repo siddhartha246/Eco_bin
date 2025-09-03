@@ -2,19 +2,55 @@ import { db } from './dbConfig';
 import { Users, Reports, Rewards, CollectedWastes, Notifications, Transactions } from './schema';
 import { eq, sql, and, desc, ne } from 'drizzle-orm';
 
-export async function createUser(email: string, name: string) {
+export async function createUser(email: string, name: string, password?: string, walletAddress?: string, authMethod?: string, phone?: string, address?: string) {
   try {
-    const [user] = await db.insert(Users).values({ email, name }).returning().execute();
+    console.log('createUser called with:', { email, name });
+
+    const userData = {
+      email: email,
+      name: name
+    };
+
+    console.log('Inserting/updating user data:', userData);
+
+    // Use ON CONFLICT to handle duplicate emails - update the name if user already exists
+    const result = await db
+      .insert(Users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: Users.email,
+        set: {
+          name: name, // Update name if email already exists
+        }
+      })
+      .returning()
+      .execute();
+
+    const [user] = result;
+
+    console.log('User created/updated successfully:', user);
     return user;
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Error creating/updating user:", error);
+    console.error("Error details:", JSON.stringify(error, null, 2));
     return null;
   }
 }
 
 export async function getUserByEmail(email: string) {
   try {
-    const [user] = await db.select().from(Users).where(eq(Users.email, email)).execute();
+    const result = await db
+      .select({
+        id: Users.id,
+        email: Users.email,
+        name: Users.name,
+        createdAt: Users.createdAt,
+      })
+      .from(Users)
+      .where(eq(Users.email, email))
+      .execute();
+
+    const [user] = result;
     return user;
   } catch (error) {
     console.error("Error fetching user by email:", error);

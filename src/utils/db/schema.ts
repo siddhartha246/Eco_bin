@@ -6,6 +6,8 @@ export const Users = pgTable("users", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Note: password, walletAddress, authMethod, phone, address columns removed
+  // They can be added back when the database is updated to include them
 });
 
 // Reports table
